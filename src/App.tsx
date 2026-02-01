@@ -1,17 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import * as htmlToImage from 'html-to-image';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/Sidebar';
 import { DraggableFurniture } from './components/DraggableFurniture';
-import { ITEM_DEFS, type ItemType, type PlacedItem } from './types';
+import { ITEM_DEFS, type ItemType, type PlacedItem, type SavedLayout } from './types';
 import { RotateCw, Trash2, Download, ZoomIn, ZoomOut, Copy } from 'lucide-react';
 import './App.css';
+
+const STORAGE_KEY = 'space-m-current';
+const LAYOUTS_KEY = 'space-m-layouts';
 
 const App: React.FC = () => {
   const [items, setItems] = useState<PlacedItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [scale, setScale] = useState(1);
   const [clipboard, setClipboard] = useState<PlacedItem[] | null>(null);
+  const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>([]);
+  const [currentLayoutName, setCurrentLayoutName] = useState('');
 
   // Selection box state
   const [isSelecting, setIsSelecting] = useState(false);
@@ -20,6 +25,118 @@ const App: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const isDraggingSelectionRef = useRef(false);
+  const isInitializedRef = useRef(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedCurrent = localStorage.getItem(STORAGE_KEY);
+      if (savedCurrent) {
+        const parsed = JSON.parse(savedCurrent);
+        setItems(parsed.items || []);
+        setCurrentLayoutName(parsed.name || '');
+      }
+      const savedLayouts = localStorage.getItem(LAYOUTS_KEY);
+      if (savedLayouts) {
+        setSavedLayouts(JSON.parse(savedLayouts));
+      }
+    } catch (e) {
+      console.error('Failed to load from localStorage:', e);
+    }
+    isInitializedRef.current = true;
+  }, []);
+
+  // Auto-save to localStorage when items change
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, name: currentLayoutName }));
+    } catch (e) {
+      console.error('Failed to save to localStorage:', e);
+    }
+  }, [items, currentLayoutName]);
+
+  // Save layouts list to localStorage
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+    try {
+      localStorage.setItem(LAYOUTS_KEY, JSON.stringify(savedLayouts));
+    } catch (e) {
+      console.error('Failed to save layouts:', e);
+    }
+  }, [savedLayouts]);
+
+  // Save current layout to a named slot
+  const handleSaveLayout = useCallback((name: string) => {
+    const newLayout: SavedLayout = {
+      id: uuidv4(),
+      name,
+      items: [...items],
+      savedAt: Date.now(),
+    };
+    setSavedLayouts(prev => [...prev, newLayout]);
+    setCurrentLayoutName(name);
+  }, [items]);
+
+  // Load a saved layout
+  const handleLoadLayout = useCallback((id: string) => {
+    const layout = savedLayouts.find(l => l.id === id);
+    if (layout) {
+      setItems(layout.items);
+      setCurrentLayoutName(layout.name);
+      setSelectedIds(new Set());
+    }
+  }, [savedLayouts]);
+
+  // Delete a saved layout
+  const handleDeleteLayout = useCallback((id: string) => {
+    setSavedLayouts(prev => prev.filter(l => l.id !== id));
+  }, []);
+
+  // Export current layout as JSON
+  const handleExportJSON = useCallback(() => {
+    const data = {
+      name: currentLayoutName || '未命名配置',
+      items,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `space-m-layout-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [items, currentLayoutName]);
+
+  // Import layout from JSON file
+  const handleImportJSON = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (data.items && Array.isArray(data.items)) {
+          setItems(data.items);
+          setCurrentLayoutName(data.name || '匯入的配置');
+          setSelectedIds(new Set());
+        } else {
+          alert('無效的配置檔案格式');
+        }
+      } catch (err) {
+        alert('無法讀取配置檔案');
+      }
+    };
+    reader.readAsText(file);
+  }, []);
+
+  // Clear all items
+  const handleClearAll = useCallback(() => {
+    if (items.length === 0 || confirm('確定要清空所有物件嗎？')) {
+      setItems([]);
+      setSelectedIds(new Set());
+      setCurrentLayoutName('');
+    }
+  }, [items.length]);
 
   // Calculate counts
   const counts = items.reduce((acc, item) => {
@@ -124,20 +241,12 @@ const App: React.FC = () => {
   };
 
   const handleCreateSelectionBox = (e: React.MouseEvent) => {
-    // Only start selection if clicking directly on workspace or container background
-    // Not on items (they stopPropagation)
+    // Only start selection if clicking on background areas
+    // Items call stopPropagation on mouseDown, so if we get here it's a background click
     if (!containerRef.current || !workspaceRef.current) return;
 
-    // Check if we clicked on the workspace/container background (not on an item)
-    const target = e.target as HTMLElement;
-    const isWorkspace = target === workspaceRef.current;
-    const isContainer = target === containerRef.current;
-    const isBackgroundImage = target.tagName === 'IMG';
-
-    // Only start selection box if clicking on background areas
-    if (!isWorkspace && !isContainer && !isBackgroundImage) {
-      return;
-    }
+    // Prevent default to avoid text selection
+    e.preventDefault();
 
     // Get mouse pos relative to workspace
     const rect = workspaceRef.current.getBoundingClientRect();
@@ -397,7 +506,18 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container" style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar counts={counts} onAdd={handleAdd} />
+      <Sidebar
+        counts={counts}
+        onAdd={handleAdd}
+        savedLayouts={savedLayouts}
+        currentLayoutName={currentLayoutName}
+        onSaveLayout={handleSaveLayout}
+        onLoadLayout={handleLoadLayout}
+        onDeleteLayout={handleDeleteLayout}
+        onExportJSON={handleExportJSON}
+        onImportJSON={handleImportJSON}
+        onClearAll={handleClearAll}
+      />
 
       <div
         ref={workspaceRef}
@@ -450,7 +570,7 @@ const App: React.FC = () => {
             style={{
               display: 'block',
               maxWidth: 'none',
-              pointerEvents: 'none',
+              cursor: 'crosshair',
             }}
             draggable={false}
           />

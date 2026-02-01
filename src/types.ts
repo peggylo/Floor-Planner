@@ -20,6 +20,13 @@ export interface PlacedItem {
     text?: string;
 }
 
+export interface SavedLayout {
+    id: string;
+    name: string;
+    items: PlacedItem[];
+    savedAt: number;
+}
+
 export const ITEM_DEFS: Record<Exclude<ItemType, 'text'>, ItemDef> = {
     ibm: {
         type: 'ibm',
