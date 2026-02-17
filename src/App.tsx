@@ -157,28 +157,34 @@ const App: React.FC = () => {
     if (workspaceRef.current && containerRef.current) {
       const bgImage = containerRef.current.querySelector('img') as HTMLImageElement;
 
-      if (bgImage && bgImage.complete) {
-        // Get the actual displayed size of the image (not natural size)
+      if (bgImage) {
+        // Get the displayed size of the background image
         const displayedWidth = bgImage.offsetWidth;
         const displayedHeight = bgImage.offsetHeight;
 
-        // Get workspace scroll position
-        const scrollLeft = workspaceRef.current.scrollLeft;
-        const scrollTop = workspaceRef.current.scrollTop;
-        const workspaceWidth = workspaceRef.current.clientWidth;
-        const workspaceHeight = workspaceRef.current.clientHeight;
+        const workspaceRect = workspaceRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
 
-        // Calculate visible area center in unscaled coordinates
-        // Account for padding (40px) and the container position
-        const padding = 40;
+        // Calculate center of the visible workspace in screen coordinates
+        const viewportCenterX = workspaceRect.left + workspaceRect.width / 2;
+        const viewportCenterY = workspaceRect.top + workspaceRect.height / 2;
 
-        // The visible center relative to the container
-        const visibleCenterX = (scrollLeft + workspaceWidth / 2 - padding) / scale;
-        const visibleCenterY = (scrollTop + workspaceHeight / 2 - padding) / scale;
+        // Calculate position relative to the container (which is scaled)
+        // We use the container's position (rect) to handle scroll and flex alignment automatically
+        // containerRect.left/top includes the effect of scroll and padding
+        const relativeX = viewportCenterX - containerRect.left;
+        const relativeY = viewportCenterY - containerRect.top;
 
-        // Clamp to image boundaries
-        initialX = Math.max(100, Math.min(displayedWidth - 100, visibleCenterX));
-        initialY = Math.max(100, Math.min(displayedHeight - 100, visibleCenterY));
+        // Convert to unscaled coordinates
+        // Since the container uses transform: scale(), the internal coordinates are:
+        // internal = displayed_offset / scale
+        const unscaledX = relativeX / scale;
+        const unscaledY = relativeY / scale;
+
+        // Clamp to image boundaries with some padding
+        // If the viewport is outside the image (e.g. looking at empty padding), this pulls it back in
+        initialX = Math.max(100, Math.min(displayedWidth - 100, unscaledX));
+        initialY = Math.max(100, Math.min(displayedHeight - 100, unscaledY));
       }
     }
 
