@@ -220,9 +220,10 @@ const App: React.FC = () => {
   };
 
   const handleCreateSelectionBox = (e: React.MouseEvent) => {
-    // Only start selection if clicking on background areas
-    // Items call stopPropagation on mouseDown, so if we get here it's a background click
+    // Only start selection if clicking on workspace background, container, or the img
     if (!containerRef.current || !workspaceRef.current) return;
+    const target = e.target as HTMLElement;
+    if (target !== workspaceRef.current && target !== containerRef.current && target.tagName !== 'IMG') return;
 
     // Prevent default to avoid text selection
     e.preventDefault();
