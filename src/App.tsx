@@ -571,7 +571,7 @@ const App: React.FC = () => {
         >
           {/* Background Map */}
           <img
-            src="/bg.jpg"
+            src={`${import.meta.env.BASE_URL}bg.jpg`}
             alt="Floor Plan"
             style={{
               display: 'block',
