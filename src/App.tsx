@@ -156,8 +156,8 @@ const App: React.FC = () => {
     if (containerRef.current) {
       const bgImage = containerRef.current.querySelector('img') as HTMLImageElement;
       if (bgImage) {
-        initialX = bgImage.naturalWidth / 2;
-        initialY = bgImage.naturalHeight / 2;
+        initialX = bgImage.offsetWidth / 2;
+        initialY = bgImage.offsetHeight / 2;
       }
     }
 
