@@ -358,30 +358,46 @@ const App: React.FC = () => {
     }
   };
 
+  const checkItemLimits = (itemsToAdd: PlacedItem[]): boolean => {
+    const addCounts: Record<string, number> = {};
+    for (const item of itemsToAdd) {
+      if (item.type !== 'text') {
+        addCounts[item.type] = (addCounts[item.type] || 0) + 1;
+      }
+    }
+    const overLimitTypes: string[] = [];
+    for (const [type, addCount] of Object.entries(addCounts)) {
+      const def = ITEM_DEFS[type as Exclude<ItemType, 'text'>];
+      const currentCount = counts[type as ItemType] || 0;
+      if (currentCount + addCount > def.maxCount) {
+        overLimitTypes.push(`${def.name}（剩餘 ${def.maxCount - currentCount} 個）`);
+      }
+    }
+    if (overLimitTypes.length > 0) {
+      alert(`超過數量上限：\n${overLimitTypes.join('\n')}`);
+      return false;
+    }
+    return true;
+  };
+
   const handlePaste = () => {
     if (!clipboard || clipboard.length === 0) return;
-
-    // Check limits (optional but requested)
-    // We should count how many of each type we are adding vs available
-    // But allow paste and show warning or just clamp is hard. 
-    // Let's just paste for now, the UI shows counts turning red if over limit anyway.
 
     const newItems = clipboard.map(item => ({
       ...item,
       id: uuidv4(),
-      x: item.x + 20, // Offset slightly
+      x: item.x + 20,
       y: item.y + 20
     }));
 
-    setItems(prev => [...prev, ...newItems]);
+    if (!checkItemLimits(newItems)) return;
 
-    // Select the newly pasted items
+    setItems(prev => [...prev, ...newItems]);
     const newIds = new Set(newItems.map(i => i.id));
     setSelectedIds(newIds);
   };
 
   const handleDuplicate = () => {
-    // Shortcut for Copy+Paste immediately
     const selectedItems = items.filter(item => selectedIds.has(item.id));
     if (selectedItems.length === 0) return;
 
@@ -391,6 +407,9 @@ const App: React.FC = () => {
       x: item.x + 20,
       y: item.y + 20
     }));
+
+    if (!checkItemLimits(newItems)) return;
+
     setItems(prev => [...prev, ...newItems]);
     setSelectedIds(new Set(newItems.map(i => i.id)));
   };
