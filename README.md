@@ -1,6 +1,7 @@
-# Space M 座位安排工具
+# Floor Planner 場地座位安排工具
 
-互動式平面圖座位配置工具，用於 Space M 場地的活動座位規劃。
+互動式平面圖座位配置工具，可用於各類場地的活動座位規劃。
+上傳場地底圖後，透過拖放方式快速配置桌椅位置。
 
 ## 功能
 
@@ -26,8 +27,3 @@ npm install
 npm run dev
 ```
 
-## 部署
-
-推送到 `main` 分支後，GitHub Actions 會自動部署到 GitHub Pages。
-
-線上版本：https://peggylo.github.io/Floor-Planner/
