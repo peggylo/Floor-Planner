@@ -13,7 +13,7 @@ const LAYOUTS_KEY = 'space-m-layouts';
 const App: React.FC = () => {
   const [items, setItems] = useState<PlacedItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(0);
   const [clipboard, setClipboard] = useState<PlacedItem[] | null>(null);
   const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>([]);
   const [currentLayoutName, setCurrentLayoutName] = useState('');
@@ -564,7 +564,8 @@ const App: React.FC = () => {
             backgroundColor: 'white',
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
-            transition: isSelecting ? 'none' : 'transform 0.1s ease-out' // Disable transition during drag for perf
+            transition: isSelecting ? 'none' : 'transform 0.1s ease-out',
+            opacity: scale === 0 ? 0 : 1
           }}
           onClick={(e) => e.stopPropagation()} // Stop click bubbling to workspace
         // onMouseDown={(e) => e.stopPropagation()} // Removed to allow starting selection on map
@@ -579,6 +580,18 @@ const App: React.FC = () => {
               cursor: 'crosshair',
             }}
             draggable={false}
+            onLoad={(e) => {
+              if (scale === 0 && workspaceRef.current) {
+                const img = e.currentTarget;
+                const ws = workspaceRef.current;
+                const padding = 80;
+                const fitScale = Math.min(
+                  (ws.clientWidth - padding) / img.naturalWidth,
+                  (ws.clientHeight - padding) / img.naturalHeight
+                );
+                setScale(fitScale);
+              }
+            }}
           />
 
           {items.map(item => (
