@@ -106,6 +106,8 @@ export const DraggableFurniture: React.FC<DraggableFurnitureProps> = ({
                 ref={nodeRef}
                 style={{
                     position: 'absolute',
+                    top: 0,
+                    left: 0,
                     width: width,
                     height: height,
                     minWidth: item.type === 'text' ? '150px' : undefined,
