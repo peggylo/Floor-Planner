@@ -150,41 +150,14 @@ const App: React.FC = () => {
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.2));
 
   const handleAdd = (type: ItemType) => {
-    // Default position near the top-left area of the floor plan
     let initialX = 400;
     let initialY = 300;
 
-    if (workspaceRef.current && containerRef.current) {
+    if (containerRef.current) {
       const bgImage = containerRef.current.querySelector('img') as HTMLImageElement;
-
       if (bgImage) {
-        // Get the displayed size of the background image
-        const displayedWidth = bgImage.offsetWidth;
-        const displayedHeight = bgImage.offsetHeight;
-
-        const workspaceRect = workspaceRef.current.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-
-        // Calculate center of the visible workspace in screen coordinates
-        const viewportCenterX = workspaceRect.left + workspaceRect.width / 2;
-        const viewportCenterY = workspaceRect.top + workspaceRect.height / 2;
-
-        // Calculate position relative to the container (which is scaled)
-        // We use the container's position (rect) to handle scroll and flex alignment automatically
-        // containerRect.left/top includes the effect of scroll and padding
-        const relativeX = viewportCenterX - containerRect.left;
-        const relativeY = viewportCenterY - containerRect.top;
-
-        // Convert to unscaled coordinates
-        // Since the container uses transform: scale(), the internal coordinates are:
-        // internal = displayed_offset / scale
-        const unscaledX = relativeX / scale;
-        const unscaledY = relativeY / scale;
-
-        // Clamp to image boundaries with some padding
-        // If the viewport is outside the image (e.g. looking at empty padding), this pulls it back in
-        initialX = Math.max(100, Math.min(displayedWidth - 100, unscaledX));
-        initialY = Math.max(100, Math.min(displayedHeight - 100, unscaledY));
+        initialX = bgImage.naturalWidth / 2;
+        initialY = bgImage.naturalHeight / 2;
       }
     }
 
