@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             zIndex: 10
         }}>
             <h1 style={{ marginBottom: '16px', fontSize: '20px', fontWeight: 'bold' }}>
-                Space M 座位安排
+                場地座位安排
             </h1>
 
             {/* 儲存管理區 */}
