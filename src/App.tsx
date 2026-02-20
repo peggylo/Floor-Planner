@@ -33,12 +33,14 @@ const App: React.FC = () => {
   useEffect(() => {
     try {
       // Migrate old storage keys if new keys don't exist yet
-      if (!localStorage.getItem(STORAGE_KEY) && localStorage.getItem(OLD_STORAGE_KEY)) {
-        localStorage.setItem(STORAGE_KEY, localStorage.getItem(OLD_STORAGE_KEY)!);
+      const oldCurrentData = localStorage.getItem(OLD_STORAGE_KEY);
+      if (!localStorage.getItem(STORAGE_KEY) && oldCurrentData) {
+        localStorage.setItem(STORAGE_KEY, oldCurrentData);
         localStorage.removeItem(OLD_STORAGE_KEY);
       }
-      if (!localStorage.getItem(LAYOUTS_KEY) && localStorage.getItem(OLD_LAYOUTS_KEY)) {
-        localStorage.setItem(LAYOUTS_KEY, localStorage.getItem(OLD_LAYOUTS_KEY)!);
+      const oldLayoutsData = localStorage.getItem(OLD_LAYOUTS_KEY);
+      if (!localStorage.getItem(LAYOUTS_KEY) && oldLayoutsData) {
+        localStorage.setItem(LAYOUTS_KEY, oldLayoutsData);
         localStorage.removeItem(OLD_LAYOUTS_KEY);
       }
 
