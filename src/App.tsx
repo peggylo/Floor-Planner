@@ -466,7 +466,7 @@ const App: React.FC = () => {
       legend.remove();
 
       const link = document.createElement('a');
-      link.download = 'space-m-layout.png';
+      link.download = 'floor-plan-layout.png';
       link.href = dataUrl;
       link.click();
     }
