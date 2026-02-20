@@ -9,11 +9,11 @@ on:
     types: [opened]
 
 jobs:
-  claude:
+  # @claude 互動模式
+  claude-interactive:
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      github.event_name == 'pull_request'
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,12 +25,27 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # PR 開啟時自動 code review
+  claude-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            ${{ github.event_name == 'pull_request' && format('
-            Review this PR.
-            REPO: {0}
-            PR NUMBER: {1}
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            請用繁體中文 review 這個 PR。
             Use `gh pr comment` to post your review as a PR comment.
             Only post GitHub comments - do not submit review text as messages.
-            ', github.repository, github.event.pull_request.number) || '' }}
-          claude_args: ${{ github.event_name == 'pull_request' && '"Bash(gh pr comment:*)"' || '' }}
+          claude_args: |
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
