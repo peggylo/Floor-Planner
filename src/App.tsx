@@ -7,8 +7,10 @@ import { ITEM_DEFS, type ItemType, type PlacedItem, type SavedLayout } from './t
 import { RotateCw, Trash2, Download, ZoomIn, ZoomOut, Copy } from 'lucide-react';
 import './App.css';
 
-const STORAGE_KEY = 'space-m-current';
-const LAYOUTS_KEY = 'space-m-layouts';
+const STORAGE_KEY = 'floor-plan-current';
+const LAYOUTS_KEY = 'floor-plan-layouts';
+const OLD_STORAGE_KEY = 'space-m-current';
+const OLD_LAYOUTS_KEY = 'space-m-layouts';
 
 const App: React.FC = () => {
   const [items, setItems] = useState<PlacedItem[]>([]);
@@ -27,9 +29,19 @@ const App: React.FC = () => {
   const isDraggingSelectionRef = useRef(false);
   const isInitializedRef = useRef(false);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (with migration from old keys)
   useEffect(() => {
     try {
+      // Migrate old storage keys if new keys don't exist yet
+      if (!localStorage.getItem(STORAGE_KEY) && localStorage.getItem(OLD_STORAGE_KEY)) {
+        localStorage.setItem(STORAGE_KEY, localStorage.getItem(OLD_STORAGE_KEY)!);
+        localStorage.removeItem(OLD_STORAGE_KEY);
+      }
+      if (!localStorage.getItem(LAYOUTS_KEY) && localStorage.getItem(OLD_LAYOUTS_KEY)) {
+        localStorage.setItem(LAYOUTS_KEY, localStorage.getItem(OLD_LAYOUTS_KEY)!);
+        localStorage.removeItem(OLD_LAYOUTS_KEY);
+      }
+
       const savedCurrent = localStorage.getItem(STORAGE_KEY);
       if (savedCurrent) {
         const parsed = JSON.parse(savedCurrent);
