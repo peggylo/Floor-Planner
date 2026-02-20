@@ -104,7 +104,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `space-m-layout-${Date.now()}.json`;
+    link.download = `floor-plan-layout-${Date.now()}.json`;
     link.click();
     URL.revokeObjectURL(url);
   }, [items, currentLayoutName]);
